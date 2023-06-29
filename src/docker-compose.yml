@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    ports:
+      # - "5332:5332"
+      - "5005:5005/udp"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - redis
+  redis:
+    image: redis:latest
