@@ -29,23 +29,22 @@ for query in queries:
         default_results[query]['response_times'].append(request_time)
         default_results[query]['traffic_volumes'].append(traffic_volume)
 
-resolver_cache = {}
 for query in queries:
     start_time = time.time()
-    if query not in resolver_cache:
-        resolver = dns.resolver.Resolver(configure=False)
-        resolver.nameservers = [PROXY_HOST]
-        resolver.port = PROXY_PORT
-        resolver_cache[query] = resolver
-    else:
-        resolver = resolver_cache[query]
+
+    resolver = dns.resolver.Resolver(configure=False)
+    resolver.nameservers = [PROXY_HOST]
+    resolver.port = PROXY_PORT
+
     request_size = len(dns.message.make_query(query, 'A').to_wire())
     answers = resolver.resolve(query, 'A')
     response_size = len(answers.response.to_wire())
     traffic_volume = request_size + response_size
+
     if query not in proxy_results:
         proxy_results[query] = {'response_times': [], 'traffic_volumes': []}
         traffic_volume *= 2
+        
     end_time = time.time()
     request_time = (end_time - start_time) * 1000
     proxy_results[query]['response_times'].append(request_time)
