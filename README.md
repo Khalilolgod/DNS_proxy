@@ -61,6 +61,7 @@ Edit the `config.json` file located in the project directory. The file should co
  ```bash
  $ python ./benchmark/benchmark.py
  ```
+ # Results
  ![bench mark example](./assets/benchmark1.png) ![bench mark example](./assets/benchmark2.png)
 
  
