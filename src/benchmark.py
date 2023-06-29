@@ -22,7 +22,7 @@ for query in queries:
     response_size = len(answers.response.to_wire())
     end_time = time.time()
     request_time = (end_time - start_time) * 1000
-    traffic_volume = request_size + response_size
+    traffic_volume = (request_size + response_size) * 2
     if query not in default_results:
         default_results[query] = {'response_times': [request_time], 'traffic_volumes': [traffic_volume]}
     else:
@@ -40,15 +40,14 @@ for query in queries:
     else:
         resolver = resolver_cache[query]
     request_size = len(dns.message.make_query(query, 'A').to_wire())
+    answers = resolver.resolve(query, 'A')
+    response_size = len(answers.response.to_wire())
+    traffic_volume = request_size + response_size
     if query not in proxy_results:
-        answers = resolver.resolve(query, 'A')
-        response_size = len(answers.response.to_wire())
         proxy_results[query] = {'response_times': [], 'traffic_volumes': []}
-    else:
-        response_size = 0
+        traffic_volume *= 2
     end_time = time.time()
     request_time = (end_time - start_time) * 1000
-    traffic_volume = request_size + response_size * 2
     proxy_results[query]['response_times'].append(request_time)
     proxy_results[query]['traffic_volumes'].append(traffic_volume)
 
