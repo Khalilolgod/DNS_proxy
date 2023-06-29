@@ -22,7 +22,7 @@ def request_to_dns_servers(data):
         try:
             response = forwardDnsRequest(data, dns_server)
             print(f"Got response for {data} - {response}")
-            return dns_server
+            return response
         except Exception:
             continue
     return None
@@ -31,7 +31,7 @@ def request_to_dns_servers(data):
 def handle_client_request(data, client_address, dns_proxy_socket):
     try:
         # Check if the DNS response exists in the cache
-        if r.get_instance().exists(data[12:]):
+        if redis_service.exists(data[12:]):
             response = redis_service.get(data[12:])
             print(f"Using cache for {data} - {response}")
         else:
