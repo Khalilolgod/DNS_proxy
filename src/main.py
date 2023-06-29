@@ -9,7 +9,7 @@ from DnsParser import parse_dns_packet
 
 # Cache to store DNS responses
 dns_cache = {}
-redis_service = r.get_instance();
+redis_service = r.get_instance()
 
 # Load the JSON data into a dictionary
 with open('config.json') as f:
@@ -17,6 +17,7 @@ with open('config.json') as f:
 
 DNS_SERVERS = config['external-dns-servers']
 CACHE_TTL = config['cache-expiration-time']
+
 
 def request_to_dns_servers(data):
     for dns_server in DNS_SERVERS:
@@ -40,10 +41,11 @@ def handle_client_request(data, client_address, dns_proxy_socket):
             response = request_to_dns_servers(data)
             if (response is None):
                 print('Domain not found in DNS servers')
-            redis_service.set(data[12:], response,ex=CACHE_TTL)
+            redis_service.set(data[12:], response, ex=CACHE_TTL)
             # Save the DNS response in the cache
 
         # Send the DNS response back to the client
+        parse_dns_packet((data[:2] + response[2:]))
         dns_proxy_socket.sendto((data[:2] + response[2:]), client_address)
     except Exception as e:
         print(f"Error handling request from {client_address}: {str(e)}")
