@@ -1,27 +1,46 @@
 import socket
 import threading
+import json
 from DnsRequest import forwardDnsRequest
 from redisWrapper import RedisSingleton as r
 
 # DNS server settings
-DNS_SERVERS = ['8.8.8.8']  # Example DNS servers (Google DNS)
 
 # Cache to store DNS responses
 dns_cache = {}
+redis_service = r.get_instance();
+
+# Load the JSON data into a dictionary
+with open('config.json') as f:
+    config = json.load(f)
+
+DNS_SERVERS = config['external-dns-servers']
+CACHE_TTL = config['cache-expiration-time']
+
+def request_to_dns_servers(data):
+    for dns_server in DNS_SERVERS:
+        try:
+            response = forwardDnsRequest(data, dns_server)
+            print(f"Got response for {data} - {response}")
+            return dns_server
+        except Exception:
+            continue
+    return None
 
 
 def handle_client_request(data, client_address, dns_proxy_socket):
     try:
         # Check if the DNS response exists in the cache
         if r.get_instance().exists(data[12:]):
-            response = r.get_instance().get(data[12:])
+            response = redis_service.get(data[12:])
             print(f"Using cache for {data} - {response}")
         else:
             # Send DNS request to the DNS servers
-            response = forwardDnsRequest(data, DNS_SERVERS[0])
+            response = request_to_dns_servers(data)
+            if (response is None):
+                print('Domain not found in DNS servers')
+            redis_service.set(data[12:], response,ex=CACHE_TTL)
             # Save the DNS response in the cache
-            r.get_instance().set(data[12:], response, ex=10)
-            print(f"Got response for {data} - {response}")
 
         # Send the DNS response back to the client
         dns_proxy_socket.sendto((data[:2] + response[2:]), client_address)
@@ -32,7 +51,7 @@ def handle_client_request(data, client_address, dns_proxy_socket):
 def start_dns_proxy():
     dns_proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # Listen for DNS requests
-    PORT = 54
+    PORT = 5005
     dns_proxy_socket.bind(('0.0.0.0', PORT))
     print(f"DNS proxy started. Listening on port {PORT}.")
 

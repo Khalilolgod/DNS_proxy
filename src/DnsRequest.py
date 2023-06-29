@@ -9,5 +9,6 @@ def forwardDnsRequest(data, dest):
         return response
     except Exception as e:
         print(f"Error forwarding {data} to {dest} : {str(e)}")
+        raise e
     finally:
         client_socket.close()
