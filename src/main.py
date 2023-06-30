@@ -23,11 +23,16 @@ def request_to_dns_servers(data):
     for dns_server in DNS_SERVERS:
         try:
             response = forwardDnsRequest(data, dns_server)
-            print(f"Got response for {data} - {response}")
+            answer_count = int.from_bytes(response[6:8], 'big')
+            if answer_count == 0:
+                print(f"Domain not found in {dns_server}")
+                raise Exception
+            print(f"Got response for {data} - {response} in {dns_server}")
             return response
         except Exception:
             continue
-    return None
+    print("\nDomain is NOT available in dns servers !\n")
+    return response
 
 
 def handle_client_request(data, client_address, dns_proxy_socket):
@@ -59,12 +64,14 @@ def start_dns_proxy():
     print(f"DNS proxy started. Listening on port {PORT}.")
 
     while True:
+        print('--------------------------------------')
         data, client_address = dns_proxy_socket.recvfrom(4096)
         client_thread = threading.Thread(
             target=handle_client_request, args=(
                 data, client_address, dns_proxy_socket)
         )
         client_thread.start()
+        print('--------------------------------------')
 
 
 start_dns_proxy()
